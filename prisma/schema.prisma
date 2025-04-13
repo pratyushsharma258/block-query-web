@@ -1,0 +1,22 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "sqlserver"
+  url      = env("DATABASE_URL")
+}
+
+model Chat {
+  id Int @id @default(autoincrement())
+  userId String @unique
+  messages Message[]
+}
+
+model Message {
+  id Int @id @default(autoincrement())
+  chatId Int
+  content String
+  chat Chat @relation(fields: [chatId], references: [id])
+}
