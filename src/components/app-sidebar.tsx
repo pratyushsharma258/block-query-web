@@ -66,9 +66,7 @@ export function AppSidebar(): JSX.Element {
         </SidebarContent>
         <SidebarFooter>
           <SignedIn>
-            <UserButton>
-              <Button className="w-full h-[3vh]">{user?.fullName}</Button>
-            </UserButton>
+            <UserButton />
           </SignedIn>
           <SignedOut>
             <SignInButton>
