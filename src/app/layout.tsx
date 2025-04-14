@@ -30,13 +30,15 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en">
         <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased main flex flex-col items-center justify-center w-screen h-screen bg-gray-600`}
+          className={`${geistSans.variable} ${geistMono.variable} antialiased w-screen h-screen overflow-hidden`}
         >
           <SidebarProvider defaultOpen={false}>
-            <SidebarTrigger className="bg-inherit w-3 h-3 absolute left-4 top-[18px] right-auto bottom-auto z-30" />
-            <AppSidebar />
-            <AppSidebarMini />
-            <main>{children}</main>
+            <div className="flex h-screen w-screen">
+              <SidebarTrigger className="absolute left-4 top-[18px] z-30 w-3 h-3 bg-inherit" />
+              <AppSidebar />
+              <AppSidebarMini />
+              <main className="flex-grow h-full overflow-auto">{children}</main>
+            </div>
           </SidebarProvider>
         </body>
       </html>

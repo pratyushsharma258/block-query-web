@@ -29,7 +29,6 @@ export function AppSidebar(): JSX.Element {
       <Sidebar>
         <SidebarHeader>
           <div className="flex items-center justify-between w-full h-[5vh]">
-            {/* <SidebarTrigger /> */}
             <div className="w-6 h-full bg-inherit" />
             <div className="w-full h-full rounded-full flex items-center justify-left px-2">
               <h1 className="text-base font-bold">Block Query</h1>
