@@ -11,7 +11,6 @@
   <img src="https://img.shields.io/badge/typescript-5-3178C6" alt="TypeScript" />
   <img src="https://img.shields.io/badge/prisma-6-2D3748" alt="Prisma" />
   <img src="https://img.shields.io/badge/clerk-auth-6C47FF" alt="Clerk" />
-  <img src="https://img.shields.io/badge/license-MIT-green" alt="License" />
 </div>
 
 <br />
@@ -24,7 +23,6 @@ Block Query is an elegant, AI-powered interface for interacting with blockchain 
 - **Multiple AI Models** - Choose between different models for varied responses
 - **Chat History** - View, search, and return to previous conversations
 - **User Authentication** - Secure user accounts with [Clerk](https://clerk.com)
-- **Responsive Design** - Beautiful interface that works across devices
 
 ## 🚀 Getting Started
 
@@ -152,7 +150,7 @@ block-query-web/
 ### Backend
 
 - **FastAPI** - High-performance Python web framework
-- **PyTorch** - Deep learning framework
+- **TensorFlow** - Deep learning framework
 - **Hugging Face Transformers** - NLP models for blockchain information
 - **Microsoft SQL Server** - Relational database for storing chats and messages
 - **Uvicorn** - ASGI server for running the FastAPI application
@@ -207,10 +205,6 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 5. Open a Pull Request
 
 Please ensure your code follows the existing style and includes appropriate tests.
-
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## 🙏 Acknowledgements
 
