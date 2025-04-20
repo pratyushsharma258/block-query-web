@@ -32,7 +32,7 @@ Block Query is an elegant, AI-powered interface for interacting with blockchain 
 
 - Node.js 18+ and npm/yarn
 - Python 3.9+ (for the backend server)
-- PostgreSQL database
+- Microsoft SQL Server
 
 ### Installation
 
@@ -61,7 +61,7 @@ NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
 CLERK_SECRET_KEY=your_clerk_secret_key
 
 # Database
-DATABASE_URL="postgresql://user:password@localhost:5432/blockquery"
+DATABASE_URL="sqlserver://localhost:1433;database=blockquery;user=username;password=password;trustServerCertificate=true"
 
 # Backend server
 NEXT_PUBLIC_API_URL=http://localhost:8000
@@ -85,7 +85,7 @@ Create a `.env` file in the server directory:
 
 ```
 MODEL_PATH="./models"
-DATABASE_URL="postgresql://user:password@localhost:5432/blockquery"
+DATABASE_URL="sqlserver://localhost:1433;database=blockquery;user=username;password=password;trustServerCertificate=true"
 ALLOWED_ORIGINS=http://localhost:3000
 ```
 
@@ -154,7 +154,7 @@ block-query-web/
 - **FastAPI** - High-performance Python web framework
 - **PyTorch** - Deep learning framework
 - **Hugging Face Transformers** - NLP models for blockchain information
-- **PostgreSQL** - Relational database for storing chats and messages
+- **Microsoft SQL Server** - Relational database for storing chats and messages
 - **Uvicorn** - ASGI server for running the FastAPI application
 
 ## 🧠 AI Models
