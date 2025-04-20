@@ -15,8 +15,7 @@ from transformers import (
     T5Tokenizer,
     TFPegasusForConditionalGeneration,
     PegasusTokenizer,
-    TFLEDForConditionalGeneration,
-    LEDTokenizer
+    GenerationConfig
 )
 
 MAX_SOURCE_LENGTH = 1024
@@ -25,13 +24,10 @@ DEFAULT_TEMPERATURE = 1.0
 DEFAULT_NUM_BEAMS = 4
 
 MODEL_PATHS = {
-    "bart": os.environ.get("BART_MODEL_PATH", "/path/to/bart-model"),
-    "t5": os.environ.get("T5_MODEL_PATH", "/path/to/t5-model"),
-    "flan-t5": os.environ.get("FLAN_T5_MODEL_PATH", "/path/to/flan-t5-model"),
-    "pegasus": os.environ.get("PEGASUS_MODEL_PATH", "/path/to/pegasus-model"),
-    "led": os.environ.get("LED_MODEL_PATH", "/path/to/led-model"),
-    "lstm_encoder": os.environ.get("LSTM_ENCODER_MODEL_PATH", "/path/to/lstm-encoder-model"),
-    "lstm_decoder": os.environ.get("LSTM_DECODER_MODEL_PATH", "/path/to/lstm-decoder-model"),
+    "bart": os.environ.get("BART_MODEL_PATH", "./models/BART"),
+    "t5": os.environ.get("T5_MODEL_PATH", "./models/T5"),
+    "flan-t5": os.environ.get("FLAN_T5_MODEL_PATH", "./models/FT5"),
+    "pegasus": os.environ.get("PEGASUS_MODEL_PATH", "./models/PG"),
 }
 
 models = {}
@@ -80,36 +76,6 @@ async def load_models(app: FastAPI):
             print("Pegasus model loaded successfully!")
         except Exception as e:
             print(f"Error loading Pegasus model: {str(e)}")
-    
-    # LED model
-    if "led" in MODEL_PATHS and os.path.exists(MODEL_PATHS["led"]):
-        try:
-            print(f"Loading LED model from {MODEL_PATHS['led']}...")
-            models["led"] = TFLEDForConditionalGeneration.from_pretrained(MODEL_PATHS["led"])
-            tokenizers["led"] = LEDTokenizer.from_pretrained(MODEL_PATHS["led"])
-            print("LED model loaded successfully!")
-        except Exception as e:
-            print(f"Error loading LED model: {str(e)}")
-    
-    print(f"Loaded {len(models)} models out of {len(MODEL_PATHS)} configured")
-
-    #LSTM encoder
-    if "lstm_encoder" in MODEL_PATHS and os.path.exists(MODEL_PATHS["lstm_encoder"]):
-        try:
-            print(f"Loading LSTM encoder model from {MODEL_PATHS['lstm_encoder']}...")
-            models["lstm_encoder"] = tf.keras.models.load_model(MODEL_PATHS["lstm_encoder"])
-            print("LSTM encoder model loaded successfully!")
-        except Exception as e:
-            print(f"Error loading LSTM encoder model: {str(e)}")
-
-    #LSTM decoder
-    if "lstm_decoder" in MODEL_PATHS and os.path.exists(MODEL_PATHS["lstm_decoder"]):
-        try:
-            print(f"Loading LSTM decoder model from {MODEL_PATHS['lstm_decoder']}...")
-            models["lstm_decoder"] = tf.keras.models.load_model(MODEL_PATHS["lstm_decoder"])
-            print("LSTM decoder model loaded successfully!")
-        except Exception as e:
-            print(f"Error loading LSTM decoder model: {str(e)}")
 
     yield 
 
@@ -175,8 +141,7 @@ MODEL_DESCRIPTIONS = {
     "bart": "BART (Bidirectional and Auto-Regressive Transformers) - Denoising autoencoder for sequence-to-sequence tasks",
     "t5": "T5 (Text-to-Text Transfer Transformer) - Unified framework for NLP tasks as text-to-text generation",
     "flan-t5": "Flan-T5 - T5 model fine-tuned on a collection of tasks described via instructions",
-    "pegasus": "Pegasus - Model optimized for abstractive summarization tasks",
-    "led": "LED (Longformer Encoder-Decoder) - Enhanced transformer with efficient attention mechanism for long documents"
+    "pegasus": "Pegasus - Model optimized for abstractive summarization tasks"
 }
 
 
@@ -215,6 +180,15 @@ async def list_models():
         loaded_count=len(models),
         total_count=len(MODEL_PATHS)
     )
+
+def cleanup_model_config(model):
+    if hasattr(model.config, "max_length"):
+        delattr(model.config, "max_length")
+    if hasattr(model.config, "num_beams"):
+        delattr(model.config, "num_beams")
+    if hasattr(model.config, "length_penalty"):
+        delattr(model.config, "length_penalty")
+    return model
 
 # Main prediction endpoint
 @app.post("/predict", response_model=AnswerResponse, tags=["Prediction"])
@@ -260,13 +234,6 @@ async def generate_answers(request: QuestionRequest):
                 )
             elif model_name == "pegasus":
                 answer = process_pegasus(
-                    request.question, 
-                    request.parameters.max_length,
-                    request.parameters.temperature,
-                    request.parameters.num_beams
-                )
-            elif model_name == "led":
-                answer = process_led(
                     request.question, 
                     request.parameters.max_length,
                     request.parameters.temperature,
@@ -360,19 +327,12 @@ def process_t5(model_name: str, question: str, max_length: int, temperature: flo
 
 def process_pegasus(question: str, max_length: int, temperature: float, num_beams: int) -> str:
     model = models["pegasus"]
+
+    model = cleanup_model_config(model)
     tokenizer = tokenizers["pegasus"]
     
-    inputs = tokenizer(
-        question.lower().strip(),
-        return_tensors="tf",
-        padding=True,
-        truncation=True,
-        max_length=MAX_SOURCE_LENGTH
-    )
-    
-    outputs = model.generate(
-        input_ids=inputs.input_ids,
-        attention_mask=inputs.attention_mask,
+    # Create generation config using the proper class
+    generation_config = GenerationConfig(
         max_length=max_length,
         temperature=temperature,
         num_beams=num_beams,
@@ -380,105 +340,26 @@ def process_pegasus(question: str, max_length: int, temperature: float, num_beam
         early_stopping=True
     )
     
-    answer = tokenizer.decode(outputs[0], skip_special_tokens=True)
-    return answer
-
-def process_led(question: str, max_length: int, temperature: float, num_beams: int) -> str:
-    model = models["led"]
-    tokenizer = tokenizers["led"]
+    input_text = question.lower().strip()
     
     inputs = tokenizer(
-        question.lower().strip(),
+        input_text,
         return_tensors="tf",
         padding=True,
         truncation=True,
         max_length=MAX_SOURCE_LENGTH
     )
     
-    # LED uses global attention on first token
-    global_attention_mask = tf.zeros_like(inputs.attention_mask)
-    global_attention_mask = tf.tensor_scatter_nd_update(
-        global_attention_mask, 
-        tf.constant([[0, 0]]), 
-        tf.constant([1])
-    )
-    
+    # Use generation config in generate method
     outputs = model.generate(
         input_ids=inputs.input_ids,
         attention_mask=inputs.attention_mask,
-        global_attention_mask=global_attention_mask,
-        max_length=max_length,
-        temperature=temperature,
-        num_beams=num_beams,
-        no_repeat_ngram_size=3,
-        early_stopping=True
+        generation_config=generation_config
     )
     
     answer = tokenizer.decode(outputs[0], skip_special_tokens=True)
     return answer
 
-# Simple question endpoint for single model testing
-@app.post("/ask/{model_name}", tags=["Prediction"])
-async def ask_specific_model(
-    model_name: str, 
-    request: QuestionRequest,
-    response_model=ModelAnswer
-):
-    if model_name not in models:
-        raise HTTPException(status_code=404, detail=f"Model '{model_name}' not found or not loaded")
-    
-    # Set default parameters if not provided
-    if request.parameters is None:
-        request.parameters = ModelParameters()
-    
-    try:
-        start_time = time.time()
-        
-        if model_name == "bart":
-            answer = process_bart(
-                request.question, 
-                request.parameters.max_length,
-                request.parameters.temperature,
-                request.parameters.num_beams
-            )
-        elif model_name in ["t5", "flan-t5"]:
-            answer = process_t5(
-                model_name,
-                request.question, 
-                request.parameters.max_length,
-                request.parameters.temperature,
-                request.parameters.num_beams
-            )
-        elif model_name == "pegasus":
-            answer = process_pegasus(
-                request.question, 
-                request.parameters.max_length,
-                request.parameters.temperature,
-                request.parameters.num_beams
-            )
-        elif model_name == "led":
-            answer = process_led(
-                request.question, 
-                request.parameters.max_length,
-                request.parameters.temperature,
-                request.parameters.num_beams
-            )
-        else:
-            raise ValueError(f"Processing not implemented for model '{model_name}'")
-        
-        end_time = time.time()
-        latency_ms = (end_time - start_time) * 1000
-        
-        return ModelAnswer(
-            model_name=model_name,
-            answer=answer,
-            latency_ms=round(latency_ms, 2)
-        )
-        
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-# Run the app with uvicorn
 if __name__ == "__main__":
     import uvicorn
     

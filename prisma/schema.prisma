@@ -9,20 +9,20 @@ datasource db {
 }
 
 model Chat {
-  id Int @id @default(autoincrement())
-  title String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  userId String @unique
-  messages Message[]
+  id        Int       @id @default(autoincrement())
+  title     String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  userId    String    
+  messages  Message[]
 }
 
 model Message {
-  id Int @id @default(autoincrement())
-  chatId Int
-  content String
+  id        Int      @id @default(autoincrement())
+  chatId    Int
+  content   String
   createdAt DateTime @default(now())
-  modelUsed String @default("BART")
-  chat Chat @relation(fields: [chatId], references: [id])
-  role String @default("USER")
+  modelUsed String   @default("BART")
+  chat      Chat     @relation(fields: [chatId], references: [id])
+  role      String   @default("USER")
 }
